@@ -3,6 +3,13 @@
 一个纯前端、离线可用的可视化配置界面，用于查看和编辑 cc-switch 使用的模型目录
 （`cc-switch-model-catalog.json`，即 `{"models": [...]}` 结构）。
 
+## 在线使用
+
+GitHub Pages：<https://harukiiiiiiiii.github.io/cc-switch-model-forge/>
+
+仓库通过 GitHub Actions 持续检查并发布：提交和 Pull Request 会执行 JavaScript
+语法、静态文件引用和 HTTP 冒烟测试；`main` 分支检查通过后自动部署到 GitHub Pages。
+
 ## 打开方式
 
 直接用浏览器打开 `index.html` 即可。数据已经内嵌在 `catalog-data.js` 中，不需要
