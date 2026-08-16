@@ -1,0 +1,5 @@
+.playwright-cli/
+output/
+qa-*.png
+SUBAGENT_MODEL_TEST_REPORT_*.md
+*.log

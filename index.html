@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Model Forge · cc-switch 模型目录工作台</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><span>M</span></div>
+        <div class="brand-text">
+          <h1>Model Forge</h1>
+          <p>cc-switch 模型目录工作台</p>
+        </div>
+      </div>
+      <div class="stats" id="stats" aria-label="目录统计"></div>
+      <div class="actions">
+        <label class="toggle-row" title="关闭后只显示源文件中已存在的字段">
+          <input type="checkbox" id="showAllFields" checked>
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          <span class="toggle-label">全部字段</span>
+        </label>
+        <span class="save-status saved" id="saveStatus" role="status" aria-live="polite">已保存</span>
+        <button class="btn ghost" id="btnImport">导入</button>
+        <button class="btn ghost" id="btnExport">导出 JSON</button>
+        <button class="btn ghost more-actions-button" id="btnMoreActions" aria-expanded="false" aria-controls="overflowActions" title="更多操作">&#8943;</button>
+        <div class="overflow-actions" id="overflowActions">
+          <button class="btn ghost" id="btnUndo" disabled>撤销</button>
+          <button class="btn ghost" id="btnRedo" disabled>重做</button>
+          <button class="btn ghost danger-text" id="btnReset">恢复基线</button>
+        </div>
+        <input type="file" id="fileImport" accept=".json,application/json" hidden>
+      </div>
+    </header>
+
+    <nav class="tabs" role="tablist" aria-label="视图切换">
+      <button class="tab active" id="tabButton-editor" role="tab" aria-selected="true" aria-controls="tab-editor" data-tab="editor">模型编辑器</button>
+      <button class="tab" id="tabButton-overview" role="tab" aria-selected="false" aria-controls="tab-overview" data-tab="overview">目录总览</button>
+      <button class="tab" id="tabButton-map" role="tab" aria-selected="false" aria-controls="tab-map" data-tab="map">字段地图</button>
+    </nav>
+
+    <main class="main">
+      <section class="bulk-editor" id="bulkEditor" aria-label="全目录批量修正">
+        <div class="bulk-title">
+          <strong>批量修正</strong>
+          <span id="bulkScopeLabel">全部模型</span>
+        </div>
+        <label class="bulk-field-label" for="bulkField">
+          <span>字段</span>
+          <select id="bulkField"></select>
+        </label>
+        <fieldset class="bulk-value-fieldset">
+          <legend>统一值</legend>
+          <div class="bulk-value-control" id="bulkValueControl"></div>
+        </fieldset>
+        <label class="bulk-include-missing">
+          <input type="checkbox" id="bulkIncludeMissing" checked>
+          <span>补齐缺失字段</span>
+        </label>
+        <span class="bulk-preview" id="bulkPreview" role="status" aria-live="polite"></span>
+        <button class="btn solid" id="btnBulkApply">应用到全部</button>
+      </section>
+      <div class="validation-panel" id="validationPanel" role="alert" hidden></div>
+      <section id="tab-editor" class="tab-panel active" role="tabpanel" aria-labelledby="tabButton-editor">
+        <aside class="sidebar">
+          <div class="search-wrap">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="6"></circle><path d="M13.5 13.5 L18 18"></path></svg>
+            <input id="search" type="search" aria-label="搜索模型" placeholder="搜索模型名称 / slug / 描述">
+          </div>
+          <div class="filter-row" role="group" aria-label="可见性筛选">
+            <button class="filter-btn active" data-filter="all">全部</button>
+            <button class="filter-btn" data-filter="list">可见</button>
+            <button class="filter-btn" data-filter="hide">隐藏</button>
+          </div>
+          <div class="model-list" id="modelList"></div>
+          <button class="btn dashed add-model" id="btnAddModel">＋ 新建模型</button>
+        </aside>
+
+        <div class="editor-pane">
+          <div class="editor-toolbar">
+            <nav class="module-jump-nav" id="moduleJumpNav" aria-label="编辑模块">
+              <button class="active" data-module-target="identity">基础信息</button>
+              <button data-module-target="reasoning">推理能力</button>
+              <button data-module-target="runtime">上下文运行</button>
+              <button data-module-target="messages">指令权限</button>
+              <button data-module-target="extensions">扩展字段</button>
+            </nav>
+            <div class="editor-filter-row">
+              <input id="editorFieldSearch" type="search" aria-label="搜索当前模型字段" placeholder="搜索字段名称或键名">
+              <label class="compact-check">
+                <input id="onlyModifiedFields" type="checkbox">
+                <span>只看修改</span>
+              </label>
+            </div>
+          </div>
+          <section class="editor-scroll" id="editorRoot"></section>
+        </div>
+      </section>
+
+      <section id="tab-overview" class="tab-panel" role="tabpanel" aria-labelledby="tabButton-overview" hidden>
+        <div class="panel-head">
+          <div>
+            <h2>目录总览</h2>
+            <p>全部模型的横向对比 · 点击表头排序 · 数据为实时编辑状态</p>
+          </div>
+        </div>
+        <div class="table-wrap" id="overviewWrap"></div>
+      </section>
+
+      <section id="tab-map" class="tab-panel" role="tabpanel" aria-labelledby="tabButton-map" hidden>
+        <div class="panel-head">
+          <div>
+            <h2>字段地图</h2>
+            <p>目录中全部可编辑参数一览，含类型、可空性与覆盖模型数 · 点击字段可跳转到编辑器</p>
+          </div>
+        </div>
+        <div class="field-map" id="fieldMap"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="catalog-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
