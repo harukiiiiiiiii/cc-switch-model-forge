@@ -40,7 +40,7 @@ test('catalog-backed templates clone existing models without sharing references'
   const templates = loadTemplates(catalog);
   const source = catalog.find((model) => model.slug === 'gpt-5.6-sol');
   const copy = templates.createTemplate('gpt-5.6-sol', catalog);
-  assert.deepEqual(copy, source);
+  assert.equal(JSON.stringify(copy), JSON.stringify(source));
   assert.notEqual(copy, source);
   assert.notEqual(copy.model_messages, source.model_messages);
 });
