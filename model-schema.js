@@ -341,7 +341,7 @@
         }
       }
 
-      if (model.default_reasoning_summary !== undefined && model.default_reasoning_summary !== null && !ENUMS.reasoningSummary.includes(model.default_reasoning_summary)) {
+      if (model.default_reasoning_summary !== undefined && !ENUMS.reasoningSummary.includes(model.default_reasoning_summary)) {
         add("error", index, "default_reasoning_summary", `default_reasoning_summary 无效：${model.default_reasoning_summary}`);
       }
       if (model.default_verbosity !== undefined && model.default_verbosity !== null && !ENUMS.verbosity.includes(model.default_verbosity)) {
@@ -368,6 +368,24 @@
       if (model.input_modalities !== undefined) {
         if (!Array.isArray(model.input_modalities) || model.input_modalities.some((item) => !ENUMS.inputModality.includes(item))) {
           add("error", index, "input_modalities", `input_modalities 只能包含 ${ENUMS.inputModality.join(" / ")}`);
+        }
+      }
+
+      if (model.default_service_tier !== undefined && model.default_service_tier !== null && typeof model.default_service_tier !== "string") {
+        add("error", index, "default_service_tier", "default_service_tier 必须是字符串或 null");
+      }
+
+      if (model.availability_nux !== undefined && model.availability_nux !== null) {
+        if (!isPlainObject(model.availability_nux) || typeof model.availability_nux.message !== "string") {
+          add("error", index, "availability_nux", "availability_nux 必须是包含字符串 message 的对象或 null");
+        }
+      }
+
+      if (model.upgrade !== undefined && model.upgrade !== null) {
+        if (!isPlainObject(model.upgrade) || typeof model.upgrade.model !== "string" || typeof model.upgrade.migration_markdown !== "string") {
+          add("error", index, "upgrade", "upgrade 必须包含字符串 model 和 migration_markdown");
+        } else if (model.upgrade.retirement_at !== undefined && model.upgrade.retirement_at !== null && typeof model.upgrade.retirement_at !== "string") {
+          add("error", index, "upgrade", "upgrade.retirement_at 必须是 RFC3339 字符串或 null");
         }
       }
 
