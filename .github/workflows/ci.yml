@@ -32,6 +32,9 @@ jobs:
             sed -i 's/"service_tiers", "default_reasoning_level"/"multi_agent_version", "default_reasoning_level"/g' scripts/apply-schema-patch.cjs
             node scripts/apply-schema-patch.cjs
           fi
+          if grep -Fq 'default_reasoning_summary !== null' model-schema.js; then
+            node scripts/finalize-schema.cjs
+          fi
 
       - name: Check JavaScript syntax
         run: |
@@ -82,11 +85,11 @@ jobs:
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'fix/codex-model-schema-audit' }}
         shell: bash
         run: |
-          if git diff --quiet -- app.js catalog-data.js; then
+          if git diff --quiet -- app.js catalog-data.js model-schema.js; then
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app.js catalog-data.js
-          git commit -m "chore: apply Codex schema repair"
+          git add app.js catalog-data.js model-schema.js
+          git commit -m "chore: finalize Codex schema repair"
           git push origin HEAD:fix/codex-model-schema-audit
