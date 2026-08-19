@@ -29,6 +29,7 @@ jobs:
         shell: bash
         run: |
           if ! grep -Fq 'const SCHEMA = window.CC_MODEL_SCHEMA;' app.js; then
+            sed -i 's/"service_tiers", "default_reasoning_level"/"multi_agent_version", "default_reasoning_level"/g' scripts/apply-schema-patch.cjs
             node scripts/apply-schema-patch.cjs
           fi
 
