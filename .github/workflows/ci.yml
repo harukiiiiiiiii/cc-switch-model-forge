@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -21,6 +21,16 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+
+      - name: Apply Codex schema repair
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'fix/codex-model-schema-audit' }}
+        shell: bash
+        run: |
+          if ! grep -Fq 'const SCHEMA = window.CC_MODEL_SCHEMA;' app.js; then
+            node scripts/apply-schema-patch.cjs
+          fi
 
       - name: Check JavaScript syntax
         run: |
@@ -66,3 +76,16 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:4173/app.js > /dev/null
           curl --fail --silent --show-error http://127.0.0.1:4173/catalog-data.js > /dev/null
           curl --fail --silent --show-error http://127.0.0.1:4173/styles.css > /dev/null
+
+      - name: Commit schema repair
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'fix/codex-model-schema-audit' }}
+        shell: bash
+        run: |
+          if git diff --quiet -- app.js catalog-data.js; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js catalog-data.js
+          git commit -m "chore: apply Codex schema repair"
+          git push origin HEAD:fix/codex-model-schema-audit
