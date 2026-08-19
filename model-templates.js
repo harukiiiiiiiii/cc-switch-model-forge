@@ -1,7 +1,10 @@
 (function (root, factory) {
   const api = factory();
   if (typeof module === "object" && module.exports) module.exports = api;
-  if (root) root.CC_MODEL_TEMPLATES = api;
+  if (root) {
+    root.CC_MODEL_TEMPLATES = api;
+    if (root.CC_CATALOG && Array.isArray(root.CC_CATALOG.models)) api.applyBuiltInDefaults(root.CC_CATALOG.models);
+  }
 })(typeof window !== "undefined" ? window : globalThis, function () {
   "use strict";
 
