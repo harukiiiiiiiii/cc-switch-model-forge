@@ -26,9 +26,10 @@ jobs:
         run: |
           node --check app.js
           node --check model-schema.js
+          node --check model-templates.js
 
-      - name: Run schema regression tests
-        run: node --test tests/model-schema.test.cjs
+      - name: Run regression tests
+        run: node --test tests/*.test.cjs
 
       - name: Check required files and references
         shell: bash
@@ -36,10 +37,12 @@ jobs:
           test -s index.html
           test -s app.js
           test -s model-schema.js
+          test -s model-templates.js
           test -s catalog-data.js
           test -s styles.css
           grep -Fq 'href="styles.css"' index.html
           grep -Fq 'src="catalog-data.js"' index.html
+          grep -Fq 'src="model-templates.js"' index.html
           grep -Fq 'src="model-schema.js"' index.html
           grep -Fq 'src="app.js"' index.html
 
@@ -62,6 +65,7 @@ jobs:
           done
 
           curl --fail --silent --show-error http://127.0.0.1:4173/index.html > /dev/null
+          curl --fail --silent --show-error http://127.0.0.1:4173/model-templates.js > /dev/null
           curl --fail --silent --show-error http://127.0.0.1:4173/model-schema.js > /dev/null
           curl --fail --silent --show-error http://127.0.0.1:4173/app.js > /dev/null
           curl --fail --silent --show-error http://127.0.0.1:4173/catalog-data.js > /dev/null

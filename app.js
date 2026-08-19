@@ -10,6 +10,8 @@
   const MODEL_REFS_KEY = "cc-switch-catalog-ui:model-refs:v1";
   const SCHEMA = window.CC_MODEL_SCHEMA;
   if (!SCHEMA) throw new Error("model-schema.js 未加载");
+  const TEMPLATES = window.CC_MODEL_TEMPLATES;
+  if (!TEMPLATES) throw new Error("model-templates.js 未加载");
   const REASONING_LEVELS = SCHEMA.ENUMS.reasoningEffort;
 
   const FIELDS = [
@@ -396,51 +398,20 @@
   }
 
   function defaultNewModel() {
-    let slug = "custom-model";
-    let n = 2;
-    while (catalog.some((m) => m.slug === slug)) {
-      slug = "custom-model-" + n++;
+    const templateId = document.getElementById("modelTemplateSelect")?.value || "blank";
+    const sourceCatalog = window.CC_CATALOG && Array.isArray(window.CC_CATALOG.models) ? window.CC_CATALOG.models : catalog;
+    const model = TEMPLATES.createTemplate(templateId, sourceCatalog);
+    const baseSlug = model.slug || "custom-model";
+    let slug = baseSlug;
+    let copyNo = 2;
+    if (catalog.some((item) => item.slug === slug)) {
+      slug = baseSlug + "-copy";
+      while (catalog.some((item) => item.slug === slug)) slug = baseSlug + "-copy-" + copyNo++;
+      model.display_name = (model.display_name || baseSlug) + " (模板)";
     }
-    const priority = Math.max(1000, ...catalog.map((m) => m.priority || 0)) + 1;
-    return {
-      slug,
-      display_name: "自定义模型",
-      description: "",
-      default_reasoning_level: "medium",
-      supported_reasoning_levels: [{ effort: "medium", description: "Balances speed and reasoning depth" }],
-      shell_type: "shell_command",
-      visibility: "list",
-      supported_in_api: true,
-      priority,
-      additional_speed_tiers: [],
-      service_tiers: [],
-      availability_nux: null,
-      upgrade: null,
-      model_messages: defaultModelMessages(),
-      include_skills_usage_instructions: true,
-      include_plugin_usage_instructions: false,
-      include_apps_usage_instructions: false,
-      default_reasoning_summary: "none",
-      support_verbosity: true,
-      default_verbosity: "low",
-      apply_patch_tool_type: "freeform",
-      web_search_tool_type: "text_and_image",
-      truncation_policy: { mode: "tokens", limit: 10000 },
-      supports_parallel_tool_calls: true,
-      supports_reasoning_summary_parameter: true,
-      supports_image_detail_original: true,
-      context_window: 272000,
-      max_context_window: 272000,
-      effective_context_window_percent: 95,
-      experimental_supported_tools: [],
-      input_modalities: ["text", "image"],
-      supports_search_tool: true,
-      use_responses_lite: false,
-      node_repl_auto_review_required: false,
-      node_repl_disabled: false,
-      model_specialty: null,
-      base_instructions: "You are Codex, a coding agent. You and the user share the same workspace and collaborate to achieve the user's goals."
-    };
+    model.slug = slug;
+    model.priority = Math.max(1000, ...catalog.map((item) => Number(item.priority) || 0)) + 1;
+    return model;
   }
 
   function isPlainObject(value) {
