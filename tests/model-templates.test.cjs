@@ -54,6 +54,7 @@ test('Grok 4.6 defaults match xAI grok-build capabilities and stay conservative 
   assert.equal(grok.display_name, 'Grok 4.6');
   assert.equal(grok.context_window, 500000);
   assert.equal(grok.max_context_window, 500000);
+  assert.equal(grok.auto_compact_token_limit, 400000);
   assert.equal(grok.default_reasoning_level, 'high');
   assert.deepEqual(grok.supported_reasoning_levels.map((row) => row.effort), ['low', 'medium', 'high', 'xhigh']);
   assert.deepEqual(grok.input_modalities, ['text', 'image']);
@@ -65,8 +66,9 @@ test('Grok 4.6 defaults match xAI grok-build capabilities and stay conservative 
   assert.equal(grok.comp_hash, null);
   assert.equal(grok.supports_image_detail_original, false);
   assert.equal(grok.supports_reasoning_summary_parameter, true);
-  assert.equal(grok.support_verbosity, true);
-  assert.equal(grok.default_verbosity, 'medium');
+  assert.equal(grok.support_verbosity, false);
+  assert.equal(grok.default_verbosity, null);
+  assert.deepEqual(grok.service_tiers.map((tier) => tier.id), ['priority']);
 });
 
 test('Grok 4.6 built-in catalog entry is normalized to the same defaults', () => {
@@ -78,6 +80,7 @@ test('Grok 4.6 built-in catalog entry is normalized to the same defaults', () =>
   for (const key of [
     'context_window',
     'max_context_window',
+    'auto_compact_token_limit',
     'default_reasoning_level',
     'supported_reasoning_levels',
     'input_modalities',
@@ -86,7 +89,10 @@ test('Grok 4.6 built-in catalog entry is normalized to the same defaults', () =>
     'use_responses_lite',
     'multi_agent_version',
     'tool_mode',
-    'comp_hash'
+    'comp_hash',
+    'support_verbosity',
+    'default_verbosity',
+    'service_tiers'
   ]) {
     assert.deepEqual(grok[key], expected[key], `expected normalized Grok field ${key}`);
   }
