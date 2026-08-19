@@ -110,6 +110,16 @@ test('plain bool fields reject explicit null while defaultable bools may be omit
   assert.ok(!validateCatalog([omitted]).errors.some((issue) => issue.path === 'supports_search_tool'));
 });
 
+test('defaulted enum fields reject explicit null but may be omitted', () => {
+  const { validateCatalog } = loadSchema();
+  const explicitNull = validateCatalog([validModel({ default_reasoning_summary: null })]);
+  assert.ok(explicitNull.errors.some((issue) => issue.path === 'default_reasoning_summary'));
+
+  const omitted = validModel();
+  delete omitted.default_reasoning_summary;
+  assert.ok(!validateCatalog([omitted]).errors.some((issue) => issue.path === 'default_reasoning_summary'));
+});
+
 test('catalog requires an instruction template from canonical or legacy field', () => {
   const { validateCatalog } = loadSchema();
   const model = validModel({ model_messages: null });
@@ -119,6 +129,25 @@ test('catalog requires an instruction template from canonical or legacy field', 
 
   model.base_instructions = 'Legacy instructions';
   assert.ok(!validateCatalog([model]).errors.some((issue) => issue.path === 'model_messages.instructions_template'));
+});
+
+test('availability and upgrade objects match ModelInfo nested shapes', () => {
+  const { validateCatalog } = loadSchema();
+  const invalid = validModel({
+    availability_nux: {},
+    upgrade: { model: 'next-model' }
+  });
+  let paths = new Set(validateCatalog([invalid]).errors.map((issue) => issue.path));
+  assert.ok(paths.has('availability_nux'));
+  assert.ok(paths.has('upgrade'));
+
+  const valid = validModel({
+    availability_nux: { message: 'New model available' },
+    upgrade: { model: 'test-model', migration_markdown: 'Stay on this model.' }
+  });
+  paths = new Set(validateCatalog([valid]).errors.map((issue) => issue.path));
+  assert.ok(!paths.has('availability_nux'));
+  assert.ok(!paths.has('upgrade'));
 });
 
 test('nested ModelInfo structures are validated strictly', () => {
@@ -151,6 +180,15 @@ test('nested ModelInfo structures are validated strictly', () => {
 test('nullable numeric fields default to null instead of zero', () => {
   const { defaultFieldValue } = loadSchema();
   assert.equal(defaultFieldValue('auto_compact_token_limit', 'nullableNumber'), null);
+});
+
+test('app integrates schema defaults and omit semantics', () => {
+  const source = fs.readFileSync(path.resolve(__dirname, '..', 'app.js'), 'utf8');
+  assert.match(source, /const SCHEMA = window\.CC_MODEL_SCHEMA/);
+  assert.match(source, /if \(v === "null"\) delPath\(model, path\)/);
+  assert.match(source, /SCHEMA\.ENUMS\.visibility/);
+  assert.match(source, /model_messages\.token_budget/);
+  assert.match(source, /model_messages\.guardian_v2/);
 });
 
 test('embedded GPT-5.6 Sol baseline uses current override ceiling', () => {
