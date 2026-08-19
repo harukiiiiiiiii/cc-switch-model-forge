@@ -76,7 +76,7 @@ window.CC_CATALOG = {
       "supports_parallel_tool_calls": true,
       "supports_image_detail_original": true,
       "context_window": 272000,
-      "max_context_window": 272000,
+      "max_context_window": 872000,
       "comp_hash": "3000",
       "effective_context_window_percent": 95,
       "experimental_supported_tools": [],

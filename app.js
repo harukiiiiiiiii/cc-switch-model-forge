@@ -8,16 +8,18 @@
   const STORAGE_KEY = "cc-switch-catalog-ui:v1";
   const BASELINE_KEY = "cc-switch-catalog-ui:baseline:v1";
   const MODEL_REFS_KEY = "cc-switch-catalog-ui:model-refs:v1";
-  const REASONING_LEVELS = ["low", "medium", "high", "xhigh", "max", "ultra"];
+  const SCHEMA = window.CC_MODEL_SCHEMA;
+  if (!SCHEMA) throw new Error("model-schema.js 未加载");
+  const REASONING_LEVELS = SCHEMA.ENUMS.reasoningEffort;
 
   const FIELDS = [
     { key: "slug", label: "标识 slug", type: "text", module: "identity", required: true },
-    { key: "display_name", label: "显示名称", type: "text", module: "identity" },
+    { key: "display_name", label: "显示名称", type: "text", module: "identity", required: true },
     { key: "description", label: "描述", type: "textarea", module: "identity", rows: 3 },
-    { key: "visibility", label: "可见性", type: "select", module: "identity", options: ["list", "hide"] },
-    { key: "priority", label: "优先级", type: "number", module: "identity" },
-    { key: "supported_in_api", label: "支持 API 调用", type: "triBool", module: "identity" },
-    { key: "shell_type", label: "执行模式", type: "select", module: "identity", options: ["shell_command"] },
+    { key: "visibility", label: "可见性", type: "select", module: "identity", options: SCHEMA.ENUMS.visibility, required: true },
+    { key: "priority", label: "优先级", type: "number", module: "identity", required: true },
+    { key: "supported_in_api", label: "支持 API 调用", type: "triBool", module: "identity", required: true },
+    { key: "shell_type", label: "执行模式", type: "select", module: "identity", options: SCHEMA.ENUMS.shellType, required: true },
     { key: "availability_nux", label: "新用户引导", type: "nullableObject", module: "identity",
       children: [{ key: "message", label: "引导文案", type: "textarea", rows: 3 }] },
     { key: "upgrade", label: "升级迁移", type: "nullableObject", module: "identity",
@@ -26,35 +28,39 @@
         { key: "migration_markdown", label: "迁移说明", type: "textarea", rows: 5 }
       ] },
 
-    { key: "supported_reasoning_levels", label: "支持的推理等级", type: "reasoningList", module: "reasoning" },
+    { key: "supported_reasoning_levels", label: "支持的推理等级", type: "reasoningList", module: "reasoning", required: true },
     { key: "default_reasoning_level", label: "默认推理等级", type: "enumInput", module: "reasoning", options: REASONING_LEVELS },
-    { key: "default_reasoning_summary", label: "默认推理摘要", type: "enumInput", module: "reasoning", options: ["none", "auto"], nullable: true },
-    { key: "support_verbosity", label: "支持详细度", type: "triBool", module: "reasoning" },
-    { key: "default_verbosity", label: "默认详细度", type: "enumInput", module: "reasoning", options: ["low", "medium"], nullable: true },
-    { key: "supports_reasoning_summaries", label: "支持推理摘要", type: "triBool", module: "reasoning" },
+    { key: "default_reasoning_summary", label: "默认推理摘要", type: "enumInput", module: "reasoning", options: SCHEMA.ENUMS.reasoningSummary, nullable: true },
+    { key: "support_verbosity", label: "支持详细度", type: "triBool", module: "reasoning", required: true },
+    { key: "default_verbosity", label: "默认详细度", type: "enumInput", module: "reasoning", options: SCHEMA.ENUMS.verbosity, nullable: true },
+    { key: "supports_reasoning_summaries", label: "上游元数据：支持推理摘要", type: "triBool", module: "reasoning" },
+    { key: "supports_reasoning_summary_parameter", label: "允许 reasoning.summary 参数", type: "triBool", module: "reasoning" },
     { key: "reasoning_summary_format", label: "摘要格式", type: "enumInput", module: "reasoning", options: ["experimental"], nullable: true },
     { key: "additional_speed_tiers", label: "附加速度档", type: "chipList", module: "reasoning" },
     { key: "service_tiers", label: "服务层级", type: "serviceList", module: "reasoning" },
     { key: "default_service_tier", label: "默认服务层级", type: "text", module: "reasoning", nullable: true },
     { key: "supports_search_tool", label: "支持联网搜索", type: "triBool", module: "reasoning" },
     { key: "web_search_tool_type", label: "搜索工具类型", type: "enumInput", module: "reasoning", options: ["text", "text_and_image"], nullable: true },
-    { key: "supports_parallel_tool_calls", label: "并行工具调用", type: "triBool", module: "reasoning" },
+    { key: "supports_parallel_tool_calls", label: "Legacy：并行工具调用", type: "triBool", module: "reasoning" },
     { key: "supports_image_detail_original", label: "支持原图细节", type: "triBool", module: "reasoning" },
     { key: "input_modalities", label: "输入模态", type: "modalityList", module: "reasoning" },
     { key: "experimental_supported_tools", label: "实验性工具", type: "chipList", module: "reasoning" },
-    { key: "tool_mode", label: "工具模式", type: "enumInput", module: "reasoning", options: ["code_mode_only"], nullable: true },
-    { key: "multi_agent_version", label: "多智能体版本", type: "enumInput", module: "reasoning", options: ["v1", "v2"], nullable: true },
+    { key: "tool_mode", label: "工具模式", type: "enumInput", module: "reasoning", options: SCHEMA.ENUMS.toolMode, nullable: true },
+    { key: "multi_agent_version", label: "多智能体版本", type: "enumInput", module: "reasoning", options: SCHEMA.ENUMS.multiAgentVersion, nullable: true },
 
     { key: "context_window", label: "上下文窗口", type: "number", module: "runtime" },
     { key: "max_context_window", label: "最大上下文窗口", type: "number", module: "runtime" },
     { key: "effective_context_window_percent", label: "生效上下文比例 %", type: "number", module: "runtime" },
-    { key: "truncation_policy", label: "截断策略", type: "truncation", module: "runtime" },
+    { key: "truncation_policy", label: "截断策略", type: "truncation", module: "runtime", required: true },
     { key: "use_responses_lite", label: "轻量响应模式", type: "triBool", module: "runtime" },
-    { key: "prefer_websockets", label: "偏好 WebSocket", type: "triBool", module: "runtime" },
-    { key: "minimal_client_version", label: "最低客户端版本", type: "text", module: "runtime" },
+    { key: "prefer_websockets", label: "上游元数据：偏好 WebSocket", type: "triBool", module: "runtime" },
+    { key: "minimal_client_version", label: "上游元数据：最低客户端版本", type: "text", module: "runtime" },
     { key: "auto_compact_token_limit", label: "自动压缩 Token 阈值", type: "nullableNumber", module: "runtime" },
     { key: "auto_review_model_override", label: "审批模型覆盖", type: "text", module: "runtime", nullable: true },
-    { key: "comp_hash", label: "编译哈希", type: "text", module: "runtime" },
+    { key: "comp_hash", label: "压缩兼容配置标识", type: "text", module: "runtime", nullable: true },
+    { key: "node_repl_auto_review_required", label: "Node REPL 需要自动审批", type: "triBool", module: "runtime" },
+    { key: "node_repl_disabled", label: "禁用 Node REPL", type: "triBool", module: "runtime" },
+    { key: "model_specialty", label: "模型专长", type: "text", module: "runtime", nullable: true },
 
     { key: "include_skills_usage_instructions", label: "包含技能使用说明", type: "triBool", module: "messages" },
     { key: "include_plugin_usage_instructions", label: "包含插件使用说明", type: "triBool", module: "messages" },
@@ -68,7 +74,10 @@
     { key: "model_messages.approvals", label: "审批策略", type: "approvals", module: "messages", parent: "model_messages" },
     { key: "model_messages.collaboration_modes", label: "协作模式", type: "jsonObj", module: "messages", parent: "model_messages" },
     { key: "model_messages.auto_review", label: "自动审批", type: "autoReview", module: "messages", parent: "model_messages" },
-    { key: "model_messages.permissions", label: "权限配置", type: "permissions", module: "messages", parent: "model_messages" }
+    { key: "model_messages.permissions", label: "权限配置", type: "permissions", module: "messages", parent: "model_messages" },
+    { key: "model_messages.multi_agent", label: "多智能体消息", type: "jsonObj", module: "messages", parent: "model_messages" },
+    { key: "model_messages.token_budget", label: "Token 预算", type: "jsonObj", module: "messages", parent: "model_messages" },
+    { key: "model_messages.guardian_v2", label: "Guardian v2", type: "jsonObj", module: "messages", parent: "model_messages" }
   ];
 
   const MODULES = [
@@ -89,9 +98,9 @@
   const PERMISSION_KEYS = ["danger_full_access", "workspace_write", "read_only"];
   const BULK_FIELD_KEYS = [
     "multi_agent_version", "default_reasoning_level", "default_reasoning_summary", "support_verbosity",
-    "default_verbosity", "supports_reasoning_summaries", "reasoning_summary_format", "supports_search_tool",
+    "default_verbosity", "supports_reasoning_summaries", "supports_reasoning_summary_parameter", "reasoning_summary_format", "supports_search_tool",
     "web_search_tool_type", "supports_parallel_tool_calls", "supports_image_detail_original", "tool_mode",
-    "visibility", "supported_in_api", "use_responses_lite", "prefer_websockets",
+    "visibility", "supported_in_api", "use_responses_lite", "prefer_websockets", "node_repl_auto_review_required", "node_repl_disabled",
     "include_skills_usage_instructions", "include_plugin_usage_instructions", "include_apps_usage_instructions",
     "apply_patch_tool_type", "context_window", "max_context_window", "effective_context_window_percent",
     "auto_compact_token_limit"
@@ -361,7 +370,8 @@
       case "text": return "";
       case "enumInput": return null;
       case "textarea": return "";
-      case "number": case "nullableNumber": return 0;
+      case "number": return 0;
+      case "nullableNumber": return null;
       case "triBool": return true;
       case "chipList": case "modalityList": return [];
       case "reasoningList": return [{ effort: "medium", description: "" }];
@@ -382,14 +392,7 @@
   }
 
   function defaultModelMessages() {
-    return {
-      instructions_template: "",
-      instructions_variables: { personality_default: "", personality_friendly: "", personality_pragmatic: "" },
-      approvals: null,
-      collaboration_modes: null,
-      auto_review: null,
-      permissions: null
-    };
+    return SCHEMA.defaultModelMessages();
   }
 
   function defaultNewModel() {
@@ -424,6 +427,7 @@
       web_search_tool_type: "text_and_image",
       truncation_policy: { mode: "tokens", limit: 10000 },
       supports_parallel_tool_calls: true,
+      supports_reasoning_summary_parameter: true,
       supports_image_detail_original: true,
       context_window: 272000,
       max_context_window: 272000,
@@ -432,6 +436,9 @@
       input_modalities: ["text", "image"],
       supports_search_tool: true,
       use_responses_lite: false,
+      node_repl_auto_review_required: false,
+      node_repl_disabled: false,
+      model_specialty: null,
       base_instructions: "You are Codex, a coding agent. You and the user share the same workspace and collaborate to achieve the user's goals."
     };
   }
@@ -441,122 +448,7 @@
   }
 
   function validateCatalog(models) {
-    const errors = [];
-    const warnings = [];
-    const seen = new Map();
-    const duplicateSlugs = new Set();
-    const priorities = new Set();
-    const add = (severity, modelIndex, path, message) => {
-      (severity === "error" ? errors : warnings).push({ modelIndex, path, message });
-    };
-
-    if (!Array.isArray(models)) {
-      return { errors: [{ modelIndex: -1, path: "models", message: "models 必须是数组" }], warnings };
-    }
-
-    models.forEach((model, index) => {
-      if (!isPlainObject(model)) {
-        add("error", index, "", `第 ${index + 1} 项必须是对象`);
-        return;
-      }
-      if (typeof model.slug !== "string" || !model.slug.trim()) {
-        add("error", index, "slug", "slug 不能为空");
-      } else {
-        if (!/^[a-z0-9][a-z0-9._-]*$/i.test(model.slug)) add("error", index, "slug", "slug 只能包含字母、数字、点、下划线和连字符");
-        if (seen.has(model.slug)) {
-          const firstIndex = seen.get(model.slug);
-          if (!duplicateSlugs.has(model.slug)) add("error", firstIndex, "slug", `slug 重复：${model.slug}`);
-          add("error", index, "slug", `slug 重复：${model.slug}`);
-          duplicateSlugs.add(model.slug);
-        } else {
-          seen.set(model.slug, index);
-        }
-      }
-
-      for (const field of FIELDS.filter((f) => !f.parent)) {
-        if (!hasPath(model, field.key)) continue;
-        const value = getPath(model, field.key);
-        const nullable = field.nullable || ["nullableNumber", "triBool", "nullableObject", "modelMessages"].includes(field.type);
-        if (value === null && nullable) continue;
-        let valid = true;
-        if (["text", "textarea", "select", "enumInput"].includes(field.type)) valid = typeof value === "string";
-        else if (["number", "nullableNumber"].includes(field.type)) valid = typeof value === "number" && Number.isFinite(value) && Number.isInteger(value);
-        else if (field.type === "triBool") valid = typeof value === "boolean";
-        else if (["chipList", "modalityList", "reasoningList", "serviceList"].includes(field.type)) valid = Array.isArray(value);
-        else if (field.type === "truncation") valid = isPlainObject(value);
-        else if (["nullableObject", "modelMessages"].includes(field.type)) valid = isPlainObject(value);
-        if (!valid) add("error", index, field.key, `${field.label} 的类型应为 ${TYPE_LABELS[field.type] || field.type}`);
-        if (field.type === "select" && typeof value === "string" && !field.options.includes(value)) {
-          add("error", index, field.key, `${field.label} 的值无效：${value}`);
-        }
-        if (field.type === "enumInput" && typeof value === "string" && value && !field.options.includes(value)) {
-          add("warning", index, field.key, `${field.label} 使用了目录未收录的新值：${value}`);
-        }
-      }
-
-      if (typeof model.priority === "number") {
-        if (priorities.has(model.priority)) add("warning", index, "priority", `优先级重复：${model.priority}`);
-        priorities.add(model.priority);
-      }
-      for (const key of ["additional_speed_tiers", "input_modalities", "experimental_supported_tools"]) {
-        if (Array.isArray(model[key]) && model[key].some((item) => typeof item !== "string" || !item.trim())) {
-          add("error", index, key, `${key} 必须是非空字符串数组`);
-        }
-      }
-      if (Array.isArray(model.supported_reasoning_levels)) {
-        model.supported_reasoning_levels.forEach((row, rowIndex) => {
-          if (!isPlainObject(row) || typeof row.effort !== "string" || !row.effort.trim()) {
-            add("error", index, "supported_reasoning_levels", `第 ${rowIndex + 1} 个推理等级缺少 effort`);
-          }
-        });
-      }
-      if (Array.isArray(model.service_tiers)) {
-        const ids = new Set();
-        model.service_tiers.forEach((tier, tierIndex) => {
-          if (!isPlainObject(tier) || typeof tier.id !== "string" || !tier.id.trim()) {
-            add("error", index, "service_tiers", `第 ${tierIndex + 1} 个服务层级缺少 id`);
-          } else if (ids.has(tier.id)) {
-            add("error", index, "service_tiers", `服务层级 id 重复：${tier.id}`);
-          } else {
-            ids.add(tier.id);
-          }
-        });
-      }
-      if (isPlainObject(model.truncation_policy)) {
-        if (typeof model.truncation_policy.mode !== "string" || !model.truncation_policy.mode) add("error", index, "truncation_policy", "截断策略缺少 mode");
-        if (!Number.isInteger(model.truncation_policy.limit) || model.truncation_policy.limit < 0) add("error", index, "truncation_policy", "截断策略 limit 必须是非负整数");
-      }
-      if (isPlainObject(model.model_messages)) {
-        if (model.model_messages.instructions_variables !== undefined && !isPlainObject(model.model_messages.instructions_variables)) {
-          add("error", index, "model_messages.instructions_variables", "指令变量必须是对象");
-        }
-        for (const key of ["approvals", "collaboration_modes", "auto_review", "permissions"]) {
-          const value = model.model_messages[key];
-          if (value !== undefined && value !== null && !isPlainObject(value)) add("error", index, `model_messages.${key}`, `${key} 必须是对象或 null`);
-        }
-      }
-
-      if (Array.isArray(model.supported_reasoning_levels)) {
-        const efforts = model.supported_reasoning_levels.map((row) => row && row.effort).filter(Boolean);
-        if (model.default_reasoning_level && !efforts.includes(model.default_reasoning_level)) {
-          add("error", index, "default_reasoning_level", "默认推理等级不在支持列表中");
-        }
-      }
-      if (typeof model.context_window === "number" && typeof model.max_context_window === "number" && model.context_window > model.max_context_window) {
-        add("error", index, "context_window", "上下文窗口不能大于最大上下文窗口");
-      }
-      if (typeof model.effective_context_window_percent === "number" && (model.effective_context_window_percent < 0 || model.effective_context_window_percent > 100)) {
-        add("error", index, "effective_context_window_percent", "生效上下文比例必须在 0 到 100 之间");
-      }
-      if (Array.isArray(model.service_tiers) && model.default_service_tier) {
-        const tierIds = model.service_tiers.map((tier) => tier && tier.id);
-        if (!tierIds.includes(model.default_service_tier)) add("warning", index, "default_service_tier", "默认服务层级不在服务层级列表中");
-      }
-      if (model.upgrade && model.upgrade.model && !models.some((candidate) => candidate && candidate.slug === model.upgrade.model)) {
-        add("warning", index, "upgrade", `升级目标不存在：${model.upgrade.model}`);
-      }
-    });
-    return { errors, warnings };
+    return SCHEMA.validateCatalog(models);
   }
 
   function renderValidation(result) {
@@ -713,6 +605,23 @@
     return FIELDS.find((f) => f.key === key);
   }
 
+  function visibilityLabel(value) {
+    if (value === "list") return "列表";
+    if (value === "hide") return "隐藏";
+    if (value === "none") return "不展示";
+    return value || "未知";
+  }
+
+  function visibilityClass(value) {
+    return value === "list" ? "on" : "off";
+  }
+
+  function nextVisibility(value) {
+    if (value === "list") return "hide";
+    if (value === "hide") return "none";
+    return "list";
+  }
+
   function renderSidebar() {
     const list = document.getElementById("modelList");
     const q = searchQuery.trim().toLowerCase();
@@ -757,8 +666,8 @@
             <span class="mini-chip">${levels} 档推理</span>
             <span class="mini-chip">${mods} 模态</span>
           </div>
-          <button class="vis-toggle card-visibility ${m.visibility === "hide" ? "off" : "on"}" data-action="toggle-visibility" data-model-index="${modelIndex}" aria-pressed="${m.visibility !== "hide"}" title="点击切换可见/隐藏">
-            <span class="vis-dot"></span>${m.visibility === "hide" ? "隐藏" : "可见"}
+          <button class="vis-toggle card-visibility ${visibilityClass(m.visibility)}" data-action="toggle-visibility" data-model-index="${modelIndex}" aria-label="当前可见性 ${visibilityLabel(m.visibility)}，点击切换" title="点击循环 list / hide / none">
+            <span class="vis-dot"></span>${visibilityLabel(m.visibility)}
           </button>
         </article>`;
       });
@@ -770,14 +679,14 @@
 
   function renderStats() {
     const el = document.getElementById("stats");
-    const visible = catalog.filter((m) => m.visibility !== "hide").length;
+    const visible = catalog.filter((m) => m.visibility === "list").length;
     const hidden = catalog.length - visible;
     const dirty = catalog.filter(isDirty).length;
     const maxCtx = Math.max(0, ...catalog.map((m) => m.max_context_window || 0));
     el.innerHTML = `
       <span class="stat-chip"><b>${catalog.length}</b> 模型</span>
       <span class="stat-chip"><b class="ok">${visible}</b> 可见</span>
-      <span class="stat-chip"><b class="hot">${hidden}</b> 隐藏</span>
+      <span class="stat-chip"><b class="hot">${hidden}</b> 非列表</span>
       <span class="stat-chip"><b class="${dirty ? "hot" : ""}">${dirty}</b> 已修改</span>
       <span class="stat-chip">上限 <b>${fmtInt(maxCtx)}</b> tokens</span>`;
   }
@@ -788,7 +697,7 @@
 
   function bulkChoices(field) {
     if (!field) return [];
-    if (field.type === "triBool") return [true, false, null];
+    if (field.type === "triBool") return field.required ? [true, false] : [true, false, null];
     if (["select", "enumInput"].includes(field.type)) {
       const choices = [...field.options];
       if (field.nullable) choices.push(null);
@@ -815,7 +724,7 @@
   function bulkAffectedIndexes() {
     return catalog.reduce((indexes, model, index) => {
       if (!bulkIncludeMissing && !hasPath(model, bulkFieldKey)) return indexes;
-      const same = hasPath(model, bulkFieldKey) && JSON.stringify(getPath(model, bulkFieldKey)) === JSON.stringify(bulkValue);
+      const same = bulkValue === null ? !hasPath(model, bulkFieldKey) : hasPath(model, bulkFieldKey) && JSON.stringify(getPath(model, bulkFieldKey)) === JSON.stringify(bulkValue);
       if (!same) indexes.push(index);
       return indexes;
     }, []);
@@ -861,7 +770,7 @@
     if (!indexes.length) return;
     const field = fieldDef(bulkFieldKey);
     const next = deepClone(catalog);
-    indexes.forEach((index) => setPath(next[index], bulkFieldKey, deepClone(bulkValue)));
+    indexes.forEach((index) => bulkValue === null ? delPath(next[index], bulkFieldKey) : setPath(next[index], bulkFieldKey, deepClone(bulkValue)));
     const currentErrors = validateCatalog(catalog).errors;
     const nextValidation = validateCatalog(next);
     const currentErrorKeys = new Set(currentErrors.map((issue) => `${issue.modelIndex}|${issue.path}|${issue.message}`));
@@ -873,7 +782,7 @@
     const valueLabel = bulkChoiceLabel(bulkValue);
     if (!confirm(`将「${field.label}」统一设为「${valueLabel}」，共修改 ${indexes.length} 个模型。确定继续吗？`)) return;
     mutate(() => {
-      indexes.forEach((index) => setPath(catalog[index], bulkFieldKey, deepClone(bulkValue)));
+      indexes.forEach((index) => bulkValue === null ? delPath(catalog[index], bulkFieldKey) : setPath(catalog[index], bulkFieldKey, deepClone(bulkValue)));
     });
     toast(`已批量修正 ${indexes.length} 个模型`, "ok");
   }
@@ -928,8 +837,8 @@
             <div class="hero-title">
               <h2>${esc(model.display_name)}</h2>
               <code>${esc(model.slug)}</code>
-              <button class="vis-toggle ${model.visibility === "hide" ? "off" : "on"}" data-action="toggle-visibility" data-model-index="${selectedIndex}" aria-pressed="${model.visibility !== "hide"}" title="点击切换可见/隐藏">
-                <span class="vis-dot"></span>${model.visibility === "hide" ? "隐藏" : "可见"}
+              <button class="vis-toggle ${visibilityClass(model.visibility)}" data-action="toggle-visibility" data-model-index="${selectedIndex}" aria-label="当前可见性 ${visibilityLabel(model.visibility)}，点击切换" title="点击循环 list / hide / none">
+                <span class="vis-dot"></span>${visibilityLabel(model.visibility)}
               </button>
             </div>
             <p class="hero-desc">${esc(model.description) || "（暂无描述）"}</p>
@@ -1091,16 +1000,18 @@
   }
 
   function renderTriBool(key, val, label) {
+    const field = fieldDef(key);
+    const hasUnset = !field?.required;
     const cur = val === true || val === "true" ? "true" : val === false || val === "false" ? "false" : "null";
     const opts = [
       ["true", "启用", "on"],
       ["false", "关闭", "off"],
-      ["null", "未设置", "nul"]
+      ...(hasUnset ? [["null", "使用默认值", "nul"]] : [])
     ];
     return `<div class="tri-select" role="group" aria-label="${esc(label)}">${opts
       .map(
-        ([v, label, cls]) =>
-          `<button class="tri-option ${cls} ${cur === v ? "active" : ""}" data-action="tri" data-path="${esc(key)}" data-val="${v}" aria-pressed="${cur === v}">${label}</button>`
+        ([v, optionLabel, cls]) =>
+          `<button class="tri-option ${cls} ${cur === v ? "active" : ""}" data-action="tri" data-path="${esc(key)}" data-val="${v}" aria-pressed="${cur === v}">${optionLabel}</button>`
       )
       .join("")}</div>`;
   }
@@ -1221,6 +1132,9 @@
         ${showNested("collaboration_modes") ? renderJsonField("model_messages.collaboration_modes", "collaboration_modes · 协作模式", mm.collaboration_modes) : ""}
         ${showNested("auto_review") ? renderAutoReview(mm.auto_review) : ""}
         ${showNested("permissions") ? renderPermissions(mm.permissions) : ""}
+        ${showNested("multi_agent") ? renderJsonField("model_messages.multi_agent", "multi_agent · 多智能体消息", mm.multi_agent) : ""}
+        ${showNested("token_budget") ? renderJsonField("model_messages.token_budget", "token_budget · Token 预算", mm.token_budget) : ""}
+        ${showNested("guardian_v2") ? renderJsonField("model_messages.guardian_v2", "guardian_v2 · Guardian v2", mm.guardian_v2) : ""}
       </div>
       <div class="field-tools" style="margin-top:8px">
         <button class="mini-btn quiet" data-action="null-object" data-path="model_messages">置空 null</button>
@@ -1365,7 +1279,7 @@
       <tr>
         <td><button class="overview-open" data-action="open-model" data-model-index="${modelIndex}" aria-label="打开模型 ${esc(m.display_name || m.slug)}"><span class="ov-model">${esc(m.display_name)}</span><span class="ov-slug">${esc(m.slug)}</span></button></td>
         <td>${familyOf(m)}</td>
-        <td><span class="badge${m.visibility === "hide" ? " hide" : ""}">${m.visibility === "hide" ? "隐藏" : "可见"}</span></td>
+        <td><span class="badge${m.visibility === "list" ? "" : " hide"}">${visibilityLabel(m.visibility)}</span></td>
         <td>${esc(m.priority ?? "-")}</td>
         <td><div class="ov-ctx">${fmtInt(m.context_window)}</div><div class="ov-bar"><span style="width:${ctxBar(m)}%"></span></div></td>
         <td class="ov-ctx">${fmtInt(m.max_context_window)}</td>
@@ -1602,9 +1516,9 @@
       const target = catalog[Number(el.dataset.modelIndex)];
       if (!target) return;
       mutate(() => {
-        target.visibility = target.visibility === "hide" ? "list" : "hide";
+        target.visibility = nextVisibility(target.visibility);
       });
-      toast(target.visibility === "hide" ? "已隐藏 " + target.slug : "已设为可见 " + target.slug, "ok");
+      toast(`可见性已设为 ${target.visibility}：${target.slug}`, "ok");
       return;
     }
     if (action === "add-model") {
@@ -1680,7 +1594,8 @@
       case "tri":
         mutate(() => {
           const v = el.dataset.val;
-          setPath(model, path, v === "null" ? null : v === "true");
+          if (v === "null") delPath(model, path);
+          else setPath(model, path, v === "true");
         });
         break;
       case "enable-object":
