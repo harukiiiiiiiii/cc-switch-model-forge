@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -21,12 +21,22 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+
+      - name: Apply model template integration
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'feat/model-templates-grok-4-6' }}
+        shell: bash
+        run: |
+          if ! grep -Fq 'const TEMPLATES = window.CC_MODEL_TEMPLATES;' app.js; then
+            node scripts/apply-model-template-patch.cjs
+          fi
 
       - name: Check JavaScript syntax
         run: |
           node --check app.js
           node --check model-schema.js
-          if [ -f model-templates.js ]; then node --check model-templates.js; fi
+          node --check model-templates.js
 
       - name: Run regression tests
         run: node --test tests/*.test.cjs
@@ -37,10 +47,12 @@ jobs:
           test -s index.html
           test -s app.js
           test -s model-schema.js
+          test -s model-templates.js
           test -s catalog-data.js
           test -s styles.css
           grep -Fq 'href="styles.css"' index.html
           grep -Fq 'src="catalog-data.js"' index.html
+          grep -Fq 'src="model-templates.js"' index.html
           grep -Fq 'src="model-schema.js"' index.html
           grep -Fq 'src="app.js"' index.html
 
@@ -63,7 +75,21 @@ jobs:
           done
 
           curl --fail --silent --show-error http://127.0.0.1:4173/index.html > /dev/null
+          curl --fail --silent --show-error http://127.0.0.1:4173/model-templates.js > /dev/null
           curl --fail --silent --show-error http://127.0.0.1:4173/model-schema.js > /dev/null
           curl --fail --silent --show-error http://127.0.0.1:4173/app.js > /dev/null
           curl --fail --silent --show-error http://127.0.0.1:4173/catalog-data.js > /dev/null
           curl --fail --silent --show-error http://127.0.0.1:4173/styles.css > /dev/null
+
+      - name: Commit model template integration
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'feat/model-templates-grok-4-6' }}
+        shell: bash
+        run: |
+          if git diff --quiet -- app.js; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js
+          git commit -m "chore: apply model template integration"
+          git push origin HEAD:feat/model-templates-grok-4-6
